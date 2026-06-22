@@ -89,8 +89,7 @@ export function generateICalFile(matches, season = 2026) {
       description += `比分: ${matchResult}\n`;
     }
     
-    description += `更新时间: ${updateTime}\n`;
-    description += `开源地址:https://github.com/lizijing98/world-cup-cal`;
+    description += `更新时间: ${updateTime}`;
     
     const title = formatMatchTitle(match, matchResult);
     calData += constant.BEGIN_EVENT;
