@@ -200,7 +200,7 @@ function hasMatchWithoutScoreAfterDeadline(allMatches) {
  */
 export async function checkWithRetry() {
   let retryCount = 0;
-  const maxRetries = 360; // 30小时（5分钟/次）
+  const maxRetries = 18; // 90分钟（5分钟/次）
 
   while (retryCount < maxRetries) {
     try {
@@ -242,11 +242,11 @@ export async function checkWithRetry() {
         await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
         continue;
       } else {
-        console.error('超出最大重试次数，放弃');
+        console.error('超出最大重试次数（90分钟），放弃');
         throw error;
       }
     }
   }
 
-  throw new Error('5 分钟检查循环超时');
+  throw new Error('比赛加时检查超时（90分钟）');
 }
