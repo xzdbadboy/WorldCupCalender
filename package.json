@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "build": "node index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "monitor": "node monitor-match.js",
+    "monitor:debug": "DEBUG=* node monitor-match.js"
   },
   "author": "Li Zijing",
   "repository": {
