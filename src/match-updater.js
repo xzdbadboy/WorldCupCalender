@@ -41,6 +41,57 @@ function isMatchFinished(match) {
 }
 
 /**
+ * 找到下一场未完成的比赛
+ */
+function getNextUnfinishedMatch(allMatches) {
+  const now = moment().utc();
+  return allMatches
+    .filter(m => m.status !== 'FINISHED')
+    .sort((a, b) => moment(a.utcDate).utc() - moment(b.utcDate).utc())
+    .find(m => moment(m.utcDate).utc().isAfter(now) ||
+               moment(m.utcDate).utc().isSame(now) ||
+               moment(m.utcDate).utc().add(2.5, 'hours').isAfter(now));
+}
+
+/**
+ * 计算比赛的估计结束时间（考虑加时）
+ * 基础：90分钟 + 15分钟缓冲（应对伤停补时、加时、点球等）
+ */
+function calculateMatchEndTime(match) {
+  return moment(match.utcDate).add(105, 'minutes');
+}
+
+/**
+ * 计算下次检查时间（智能调度）
+ */
+function calculateNextCheckTime(allMatches) {
+  const now = moment().utc();
+  const nextMatch = getNextUnfinishedMatch(allMatches);
+
+  if (!nextMatch) {
+    return null;
+  }
+
+  const nextMatchEndTime = calculateMatchEndTime(nextMatch);
+  const intervalToMatchEnd = nextMatchEndTime.diff(now, 'hours', true);
+
+  // 如果间隔 > 2小时，设定为该比赛结束时间
+  if (intervalToMatchEnd > 2) {
+    return nextMatchEndTime;
+  }
+
+  // 间隔 ≤ 2小时，需要进入 5 分钟检查循环
+  // 或者立即检查（如果比赛已经开始/即将开始）
+  if (intervalToMatchEnd > 0) {
+    return nextMatchEndTime.clone().add(5, 'minutes');
+  }
+
+  // 如果已经过了估计的结束时间但没获取到比分
+  // 进入 5 分钟小循环
+  return now.clone().add(5, 'minutes');
+}
+
+/**
  * 主处理逻辑
  */
 export async function checkAndUpdateMatches() {
@@ -96,37 +147,29 @@ export async function checkAndUpdateMatches() {
 
           console.log(`✓ 比赛已处理: ${match.homeTeam.name} ${match.score.fullTime.home}-${match.score.fullTime.away} ${match.awayTeam.name}`);
         }
-      } else {
-        // 未结束的比赛 - 计算下一次检查时间
-        const matchTime = moment(match.utcDate);
-        const estimatedEndTime = matchTime.clone().add(2, 'hours'); // 90分钟 + 伤停补时
-        const checkTime = estimatedEndTime.clone().add(5, 'minutes'); // 每5分钟检查
-
-        if (!nextCheckTime || checkTime.isBefore(nextCheckTime)) {
-          nextCheckTime = checkTime;
-        }
-
-        const taipeiTime = moment(match.utcDate).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm');
-        console.log(`待开始: ${match.homeTeam.name} vs ${match.awayTeam.name} (北京时间: ${taipeiTime})`);
       }
     }
 
-    // 如果今天没有待开始的比赛，找最近的下一场比赛
-    if (!nextCheckTime) {
-      const now = moment().utc();
-      const futureMatches = apiData.matches
-        .filter(m => moment(m.utcDate).utc().isAfter(now) && m.status !== 'FINISHED')
-        .sort((a, b) => moment(a.utcDate).utc() - moment(b.utcDate).utc());
+    // 使用智能调度算法计算下次检查时间
+    nextCheckTime = calculateNextCheckTime(apiData.matches);
 
-      if (futureMatches.length > 0) {
-        const nextMatch = futureMatches[0];
-        const matchTime = moment(nextMatch.utcDate);
-        const estimatedEndTime = matchTime.clone().add(2, 'hours');
-        nextCheckTime = estimatedEndTime.clone().add(5, 'minutes');
-
+    if (nextCheckTime) {
+      const nextMatch = getNextUnfinishedMatch(apiData.matches);
+      if (nextMatch) {
         const taipeiTime = moment(nextMatch.utcDate).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm');
         console.log(`\n下一场比赛: ${nextMatch.homeTeam.name} vs ${nextMatch.awayTeam.name}`);
         console.log(`北京时间: ${taipeiTime}`);
+
+        const nextCheckTaipei = nextCheckTime.clone().tz('Asia/Shanghai');
+        const intervalHours = nextCheckTime.diff(moment().utc(), 'hours', true);
+        console.log(`\n📋 智能调度：间隔 ${intervalHours.toFixed(2)} 小时`);
+        console.log(`下次检查时间（北京时间）: ${nextCheckTaipei.format('YYYY-MM-DD HH:mm:ss')}`);
+
+        if (intervalHours > 2) {
+          console.log('✅ 间隔 > 2小时，将在比赛结束后检查');
+        } else {
+          console.log('⚠️ 间隔 ≤ 2小时，5分钟小循环检查中...');
+        }
       }
     }
 
@@ -139,24 +182,71 @@ export async function checkAndUpdateMatches() {
 }
 
 /**
+ * 检查是否有比赛应该已结束但还无比分
+ */
+function hasMatchWithoutScoreAfterDeadline(allMatches) {
+  const now = moment().utc();
+  return allMatches.some(m => {
+    if (m.status === 'FINISHED' && isMatchFinished(m)) {
+      return false;
+    }
+    const estimatedEndTime = calculateMatchEndTime(m);
+    return now.isAfter(estimatedEndTime) && m.status !== 'FINISHED';
+  });
+}
+
+/**
  * 以 5 分钟间隔重复检查，直到获取到比分
  */
 export async function checkWithRetry() {
-  try {
-    const result = await checkAndUpdateMatches();
+  let retryCount = 0;
+  const maxRetries = 360; // 30小时（5分钟/次）
 
-    if (result.nextCheckTime) {
-      const taipei = moment(result.nextCheckTime).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss');
-      console.log(`\n下一次检查时间（北京时间）: ${taipei}`);
-      return result.nextCheckTime;
+  while (retryCount < maxRetries) {
+    try {
+      const result = await checkAndUpdateMatches();
+
+      // 检查是否有比赛应该已结束但还没有比分
+      const apiData = await fetchWorldCupMatches(2026);
+      if (hasMatchWithoutScoreAfterDeadline(apiData.matches)) {
+        retryCount++;
+        const nextRetry = moment().utc().add(5, 'minutes');
+        const taipei = nextRetry.tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss');
+
+        console.log(`\n⏳ 检测到比赛可能还在进行中（加时赛中）`);
+        console.log(`📍 将在 5 分钟后重试检查（第 ${retryCount} 次）`);
+        console.log(`下次重试时间（北京时间）: ${taipei}`);
+
+        // 等待 5 分钟再次检查
+        await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+        continue;
+      }
+
+      if (result.nextCheckTime) {
+        const taipei = moment(result.nextCheckTime).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss');
+        console.log(`\n下一次检查时间（北京时间）: ${taipei}`);
+        return result.nextCheckTime;
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error('检查失败:', error.message);
+      retryCount++;
+      if (retryCount < maxRetries) {
+        const nextRetry = moment().utc().add(5, 'minutes');
+        const taipei = nextRetry.tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss');
+        console.log(`5 分钟后重试...（第 ${retryCount} 次）`);
+        console.log(`下次重试时间（北京时间）: ${taipei}`);
+
+        await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+        continue;
+      } else {
+        console.error('超出最大重试次数，放弃');
+        throw error;
+      }
     }
-
-    return null;
-
-  } catch (error) {
-    console.error('检查失败，5分钟后重试:', error.message);
-    const retryTime = new Date(Date.now() + 5 * 60 * 1000);
-    console.log(`重试时间: ${moment(retryTime).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}`);
-    return retryTime;
   }
+
+  throw new Error('5 分钟检查循环超时');
 }
