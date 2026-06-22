@@ -15,7 +15,7 @@
 
 * github订阅地址(GFW内不稳定需代理): 
 
-> https://raw.githubusercontent.com/lizijing98/world-cup-cal/master/WorldCupSchedule.ics
+> [https://raw.githubusercontent.com/xzdbadboy/WorldCupCalender/master/WorldCupSchedule.ics](https://raw.githubusercontent.com/xzdbadboy/WorldCupCalender/master/WorldCupSchedule.ics)
 
 
 ## 隐私与安全
