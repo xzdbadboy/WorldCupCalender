@@ -80,7 +80,8 @@ jobs:
         run: |
           git add WorldCupSchedule.ics .state/tracker.json
           git commit -m "chore: 自动更新世界杯赛程和比赛数据"
-          git push
+          git remote set-url origin https://github-actions[bot]:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_AUTHOR_NAME: GitHub Action
