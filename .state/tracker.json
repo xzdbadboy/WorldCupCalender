@@ -36,8 +36,13 @@
       "status": "FINISHED",
       "enrichedAt": "2026-06-23T01:15:36.613Z",
       "lastUpdatedAt": "2026-06-23T01:15:36.613Z"
+    },
+    "537400": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-23T05:42:26.955Z",
+      "lastUpdatedAt": "2026-06-23T05:42:26.955Z"
     }
   },
-  "lastCheck": "2026-06-23T02:29:59.894Z",
-  "nextScheduledCheck": "2026-06-23T04:45:00.000Z"
+  "lastCheck": "2026-06-23T05:42:26.955Z",
+  "nextScheduledCheck": "2026-06-23T18:45:00.000Z"
 }
