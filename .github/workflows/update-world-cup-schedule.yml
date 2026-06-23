@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 设置 Node.js
         uses: actions/setup-node@v4
@@ -78,9 +80,13 @@ jobs:
         run: |
           git add WorldCupSchedule.ics .state/tracker.json
           git commit -m "chore: 自动更新世界杯赛程和比赛数据"
-          git push origin master
+          git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: GitHub Action
+          GIT_AUTHOR_EMAIL: action@github.com
+          GIT_COMMITTER_NAME: GitHub Action
+          GIT_COMMITTER_EMAIL: action@github.com
 
       - name: 输出下次检查时间
         if: steps.check_schedule.outputs.should_run == 'true'
