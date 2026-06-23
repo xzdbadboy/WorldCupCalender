@@ -27,12 +27,17 @@
       "enrichedAt": "2026-06-23T01:15:59.686Z",
       "lastUpdatedAt": "2026-06-23T01:15:59.686Z"
     },
+    "537394": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-23T02:29:59.894Z",
+      "lastUpdatedAt": "2026-06-23T02:29:59.894Z"
+    },
     "537399": {
       "status": "FINISHED",
       "enrichedAt": "2026-06-23T01:15:36.613Z",
       "lastUpdatedAt": "2026-06-23T01:15:36.613Z"
     }
   },
-  "lastCheck": "2026-06-23T01:15:59.686Z",
-  "nextScheduledCheck": "2026-06-23T01:50:00.000Z"
+  "lastCheck": "2026-06-23T02:29:59.894Z",
+  "nextScheduledCheck": "2026-06-23T04:45:00.000Z"
 }
