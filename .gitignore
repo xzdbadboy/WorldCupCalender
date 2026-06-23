@@ -1,14 +1,28 @@
+# macOS
 .DS_Store
+._*
+.AppleDouble
+.LSOverride
+
+# Dependencies
 node_modules/
 dist/
+
+# Logs
 logs/
 **/*.log
 
-.idea
-.vscode
+# IDEs
+.idea/
+.vscode/
 
+# Environment
 .env
 .env.*
+
+# Project
 cache/
 docs/
 CLAUDE.md
+.claude/
+.state/
