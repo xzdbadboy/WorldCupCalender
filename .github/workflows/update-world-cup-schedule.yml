@@ -2,9 +2,8 @@ name: 世界杯日历定时更新
 
 on:
   schedule:
-    # 每 30 分钟检查一次是否需要运行监控（UTC 时区）
-    # 将在 :00 和 :30 分时自动触发
-    - cron: '*/30 * * * *'
+    # 每 20 分钟检查一次 FIFA 数据（UTC 时区）
+    - cron: '*/20 * * * *'
   workflow_dispatch:
     # 支持手动触发
 
@@ -26,46 +25,15 @@ jobs:
       - name: 安装依赖
         run: npm install
 
-      - name: 检查是否需要运行监控
-        id: check_schedule
-        run: |
-          # 如果是 schedule 触发（自动定时），总是运行
-          if [ "${{ github.event_name }}" == "schedule" ]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-            echo "✅ 定时任务触发，开始监控"
-          else
-            # 手动触发时检查时间
-            if [ -f .state/tracker.json ]; then
-              NEXT_CHECK=$(jq -r '.nextScheduledCheck // "2026-01-01T00:00:00Z"' .state/tracker.json)
-            else
-              NEXT_CHECK="1970-01-01T00:00:00Z"
-            fi
-
-            NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-            echo "当前时间: $NOW"
-            echo "下次检查: $NEXT_CHECK"
-
-            if [[ "$NOW" > "$NEXT_CHECK" ]] || [[ "$NOW" == "$NEXT_CHECK" ]]; then
-              echo "should_run=true" >> $GITHUB_OUTPUT
-              echo "✅ 到达检查时间，开始监控"
-            else
-              echo "should_run=false" >> $GITHUB_OUTPUT
-              echo "⏳ 等待下次检查时间"
-            fi
-          fi
-
       - name: 运行比赛监控
-        if: steps.check_schedule.outputs.should_run == 'true'
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-          ANYSEARCH_API_KEY: ${{ secrets.ANYSEARCH_API_KEY }}
           SEASON_YEAR: 2026
           CACHE_DURATION_HOURS: 24
         run: npm run monitor
 
       - name: 检查更改
         id: check_changes
-        if: steps.check_schedule.outputs.should_run == 'true'
         run: |
           if git diff --quiet WorldCupSchedule.ics; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
@@ -92,11 +60,3 @@ jobs:
           GIT_AUTHOR_EMAIL: action@github.com
           GIT_COMMITTER_NAME: GitHub Action
           GIT_COMMITTER_EMAIL: action@github.com
-
-      - name: 输出下次检查时间
-        if: steps.check_schedule.outputs.should_run == 'true'
-        run: |
-          if [ -f .state/tracker.json ]; then
-            jq '.nextScheduledCheck' .state/tracker.json
-          fi
-

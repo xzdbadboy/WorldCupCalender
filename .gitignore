@@ -27,3 +27,4 @@ CLAUDE.md
 .claude/
 .state/*
 !.state/tracker.json
+REFACTOR_PLAN.md

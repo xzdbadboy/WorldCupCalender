@@ -22,9 +22,7 @@ function initializeState() {
   return {
     version: '1.0.0',
     createdAt: new Date().toISOString(),
-    processedMatches: {},
-    lastCheck: null,
-    nextScheduledCheck: null
+    processedMatches: {}
   };
 }
 
@@ -65,8 +63,6 @@ export async function updateStateTracker(matchId, updateData) {
       lastUpdatedAt: new Date().toISOString()
     };
 
-    state.lastCheck = new Date().toISOString();
-
     fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
     console.log(`状态已更新: 比赛 ${matchId}`);
 
@@ -74,27 +70,6 @@ export async function updateStateTracker(matchId, updateData) {
 
   } catch (error) {
     console.error('更新状态文件失败:', error.message);
-    throw error;
-  }
-}
-
-/**
- * 设置下一个检查时间
- */
-export async function setNextCheckTime(checkTime) {
-  ensureStateDir();
-
-  try {
-    const state = await getStateTracker();
-    state.nextScheduledCheck = checkTime ? checkTime.toISOString() : null;
-
-    fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
-    console.log(`下一个检查时间已设置: ${state.nextScheduledCheck}`);
-
-    return state;
-
-  } catch (error) {
-    console.error('设置检查时间失败:', error.message);
     throw error;
   }
 }
