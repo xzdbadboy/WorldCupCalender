@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-06-22T07:01:54.418Z",
+  "processedMatches": {
+    "537365": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-22T07:29:10.063Z",
+      "lastUpdatedAt": "2026-06-22T07:29:10.063Z"
+    },
+    "537366": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-22T07:01:54.418Z",
+      "lastUpdatedAt": "2026-06-22T07:01:54.418Z"
+    },
+    "537371": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-22T07:28:42.355Z",
+      "lastUpdatedAt": "2026-06-22T07:28:42.355Z"
+    },
+    "537372": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-22T07:29:19.051Z",
+      "lastUpdatedAt": "2026-06-22T07:29:19.051Z"
+    },
+    "537393": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-23T01:15:59.686Z",
+      "lastUpdatedAt": "2026-06-23T01:15:59.686Z"
+    },
+    "537399": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-23T01:15:36.613Z",
+      "lastUpdatedAt": "2026-06-23T01:15:36.613Z"
+    }
+  },
+  "lastCheck": "2026-06-23T01:15:59.686Z",
+  "nextScheduledCheck": "2026-06-23T01:50:00.000Z"
+}

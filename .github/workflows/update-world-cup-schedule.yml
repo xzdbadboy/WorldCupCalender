@@ -1,0 +1,55 @@
+name: 世界杯日历定时更新
+
+on:
+  schedule:
+    # 每天北京时间 08:00、12:00、16:00、20:00 运行（UTC 对应 00:00、04:00、08:00、12:00）
+    - cron: '0 0,4,8,12 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-schedule:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 安装依赖
+        run: npm install
+
+      - name: 运行比赛监控
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          ANYSEARCH_API_KEY: ${{ secrets.ANYSEARCH_API_KEY }}
+          SEASON_YEAR: 2026
+          CACHE_DURATION_HOURS: 24
+        run: npm run monitor
+
+      - name: 检查更改
+        id: check_changes
+        run: |
+          if git diff --quiet WorldCupSchedule.ics; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 配置 Git 用户
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: 提交和推送更改
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git add WorldCupSchedule.ics .state/tracker.json
+          git commit -m "chore: 自动更新世界杯赛程和比赛数据"
+          git push origin master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
