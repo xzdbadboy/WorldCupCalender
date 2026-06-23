@@ -2,8 +2,8 @@ name: 世界杯日历定时更新
 
 on:
   schedule:
-    # 每天北京时间 08:00、12:00、16:00、20:00 运行（UTC 对应 00:00、04:00、08:00、12:00）
-    - cron: '0 0,4,8,12 * * *'
+    # 每 30 分钟检查一次是否需要运行监控
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -22,7 +22,34 @@ jobs:
       - name: 安装依赖
         run: npm install
 
+      - name: 检查是否需要运行监控
+        id: check_schedule
+        run: |
+          # 读取下次计划检查时间
+          if [ -f .state/tracker.json ]; then
+            NEXT_CHECK=$(jq -r '.nextScheduledCheck // "2026-01-01T00:00:00Z"' .state/tracker.json)
+          else
+            # 如果文件不存在，立即运行
+            NEXT_CHECK="1970-01-01T00:00:00Z"
+          fi
+
+          # 获取当前 UTC 时间
+          NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          echo "当前时间: $NOW"
+          echo "下次检查: $NEXT_CHECK"
+
+          # 比较时间，如果当前时间 >= 下次检查时间，则需要运行
+          if [[ "$NOW" > "$NEXT_CHECK" ]] || [[ "$NOW" == "$NEXT_CHECK" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ 到达检查时间，开始监控"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "⏳ 等待下次检查时间"
+          fi
+
       - name: 运行比赛监控
+        if: steps.check_schedule.outputs.should_run == 'true'
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
           ANYSEARCH_API_KEY: ${{ secrets.ANYSEARCH_API_KEY }}
@@ -32,6 +59,7 @@ jobs:
 
       - name: 检查更改
         id: check_changes
+        if: steps.check_schedule.outputs.should_run == 'true'
         run: |
           if git diff --quiet WorldCupSchedule.ics; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
@@ -53,3 +81,11 @@ jobs:
           git push origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 输出下次检查时间
+        if: steps.check_schedule.outputs.should_run == 'true'
+        run: |
+          if [ -f .state/tracker.json ]; then
+            jq '.nextScheduledCheck' .state/tracker.json
+          fi
+
