@@ -25,4 +25,5 @@ cache/
 docs/
 CLAUDE.md
 .claude/
-.state/
+.state/*
+!.state/tracker.json
