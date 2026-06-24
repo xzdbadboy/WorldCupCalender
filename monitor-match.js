@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import 'dotenv/config';
+import moment from 'moment-timezone';
 import { checkAndUpdateMatches } from './src/match-updater.js';
 
 /**
@@ -11,7 +12,7 @@ import { checkAndUpdateMatches } from './src/match-updater.js';
  */
 async function main() {
   console.log('\n' + '='.repeat(60));
-  console.log(`[${new Date().toISOString()}] 世界杯比赛监控系统启动`);
+  console.log(`[${moment().utc().toISOString()}] 世界杯比赛监控系统启动`);
   console.log('='.repeat(60) + '\n');
 
   try {

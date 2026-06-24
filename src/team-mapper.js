@@ -31,7 +31,6 @@ function loadTeamInfo() {
  */
 const TEAM_ALIASES = {
   'Cape Verde Islands': 'Cape Verde',
-  'Ivory Coast': 'Ivory Coast',
   'Korea Republic': 'South Korea',
   'USA': 'United States'
 };
@@ -79,6 +78,7 @@ export function getTeamMapping(teamName) {
 
 /**
  * 构建队伍名称映射表
+ * @deprecated 导出但未在任何活跃模块中导入。仅通过 getTeamMapping 进行查询。
  * @function buildTeamNameMap
  * @returns {Object} 队伍名称映射对象，键为英文名，值为包含中文名和国旗的对象
  */
@@ -167,9 +167,10 @@ export function getStageName(stage) {
  * const title = formatMatchTitle(match);
  * // 返回: 'A组-墨西哥🇲🇽vs南非🇿🇦'
  */
-export function formatMatchTitle(match, matchResult) {
-  const homeTeam = getTeamMapping(match.homeTeam?.name);
-  const awayTeam = getTeamMapping(match.awayTeam?.name);
+export function formatMatchTitle(match, matchResult, homeTeam, awayTeam) {
+  // 如果已提供已解析的队伍信息则直接使用，避免重复查询
+  if (!homeTeam) homeTeam = getTeamMapping(match.homeTeam?.name);
+  if (!awayTeam) awayTeam = getTeamMapping(match.awayTeam?.name);
   const group = getGroupLetter(match.group);
   const stage = getStageName(match.stage);
 

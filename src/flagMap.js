@@ -1,3 +1,10 @@
+/**
+ * 队伍国旗映射表
+ *
+ * @deprecated 数据已合并到 teamInfo_2026.json，通过 team-mapper.js 的 getTeamMapping() 统一查询。
+ *             此文件仅被 deprecated/index_xlsx.js 引用，保留以供旧版 xlsx 生成脚本使用。
+ *             注意：此映射仅包含 2022 年 32 支参赛队，不包含 2026 年新增的 16 支队伍。
+ */
 export default {
 	阿根廷: "🇦🇷​",
 	澳大利亚: "​🇦🇺​",

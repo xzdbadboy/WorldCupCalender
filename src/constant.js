@@ -12,6 +12,6 @@ export default {
 	DTSTART: 'DTSTART:', // 开始时间
 	DTEND: 'DTEND:', // 结束时间
 	DESCRIPTION: "DESCRIPTION:",
-	DESC_TEXT: "开源地址:https://github.com/lizijing98/world-cup-cal\n", // 描述
+	DESC_TEXT: "开源地址:https://github.com/xzdbadboy/WorldCupCalender\n", // 描述
 	END_EVENT: "END:VEVENT\n", // 事件结束
 };

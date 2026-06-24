@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import moment from 'moment-timezone';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATE_DIR = path.join(__dirname, '..', '.state');
@@ -21,7 +22,7 @@ function ensureStateDir() {
 function initializeState() {
   return {
     version: '1.0.0',
-    createdAt: new Date().toISOString(),
+    createdAt: moment().utc().toISOString(),
     processedMatches: {}
   };
 }
@@ -29,7 +30,7 @@ function initializeState() {
 /**
  * 读取状态文件
  */
-export async function getStateTracker() {
+export function getStateTracker() {
   ensureStateDir();
 
   try {
@@ -47,11 +48,11 @@ export async function getStateTracker() {
 /**
  * 更新单个比赛的处理状态
  */
-export async function updateStateTracker(matchId, updateData) {
+export function updateStateTracker(matchId, updateData) {
   ensureStateDir();
 
   try {
-    const state = await getStateTracker();
+    const state = getStateTracker();
 
     if (!state.processedMatches) {
       state.processedMatches = {};
@@ -60,7 +61,7 @@ export async function updateStateTracker(matchId, updateData) {
     state.processedMatches[matchId] = {
       ...state.processedMatches[matchId],
       ...updateData,
-      lastUpdatedAt: new Date().toISOString()
+      lastUpdatedAt: moment().utc().toISOString()
     };
 
     fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
@@ -76,8 +77,9 @@ export async function updateStateTracker(matchId, updateData) {
 
 /**
  * 清空状态（用于测试或重新开始）
+ * @deprecated 导出但未在任何活跃模块中导入。保留为测试工具。
  */
-export async function clearStateTracker() {
+export function clearStateTracker() {
   ensureStateDir();
 
   try {

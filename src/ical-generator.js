@@ -63,8 +63,8 @@ export function generateICalFile(matches, season = 2026) {
     `X-WR-CALNAME:${season}世界杯⚽🏆\n` + 
     constant.APPLE_COLOR;
 
-  const sortedMatches = [...matches].sort((a, b) => 
-    new Date(a.utcDate) - new Date(b.utcDate)
+  const sortedMatches = [...matches].sort((a, b) =>
+    moment(a.utcDate).valueOf() - moment(b.utcDate).valueOf()
   );
 
   const updateTime = moment().tz('Asia/Shanghai').format('YYYY/MM/DD');
@@ -84,14 +84,18 @@ export function generateICalFile(matches, season = 2026) {
     if (match.matchday) {
       description += `轮次: 第${match.matchday}轮\n`;
     }
+
+    // 预先获取队伍信息，避免 formatMatchResult 和 formatMatchTitle 中重复查询
+    const homeTeam = getTeamMapping(match.homeTeam?.name);
+    const awayTeam = getTeamMapping(match.awayTeam?.name);
     const matchResult = formatMatchResult(match);
     if (matchResult) {
       description += `比分: ${matchResult}\n`;
     }
-    
+
     description += `更新时间: ${updateTime}`;
-    
-    const title = formatMatchTitle(match, matchResult);
+
+    const title = formatMatchTitle(match, matchResult, homeTeam, awayTeam);
     calData += constant.BEGIN_EVENT;
     calData += constant.SUMMARY + title + '\n';
     calData += constant.DTSTART + startTime + '\n';

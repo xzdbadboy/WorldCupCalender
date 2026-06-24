@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
+import moment from 'moment-timezone';
 
 const BASE_URL = 'https://api.football-data.org';
 const CACHE_FILE = path.join(process.cwd(), 'cache', 'api-cache.json');
@@ -15,15 +16,15 @@ let lastRequestTime = 0;
  * @returns {Promise<void>}
  */
 async function enforceRateLimit() {
-  const now = Date.now();
+  const now = moment().valueOf();
   const timeSinceLastRequest = now - lastRequestTime;
-  
+
   if (timeSinceLastRequest < RATE_LIMIT_DELAY) {
     const delayNeeded = RATE_LIMIT_DELAY - timeSinceLastRequest;
     await new Promise(resolve => setTimeout(resolve, delayNeeded));
   }
-  
-  lastRequestTime = Date.now();
+
+  lastRequestTime = moment().valueOf();
 }
 
 /**
@@ -46,7 +47,7 @@ function readCache() {
   try {
     if (fs.existsSync(CACHE_FILE)) {
       const cacheData = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
-      const cacheAge = Date.now() - new Date(cacheData.timestamp).getTime();
+      const cacheAge = moment().valueOf() - moment(cacheData.timestamp).valueOf();
       const maxAge = parseInt(process.env.CACHE_DURATION_HOURS || '24') * 60 * 60 * 1000;
       
       if (cacheAge < maxAge) {
@@ -71,7 +72,7 @@ function writeCache(data) {
   try {
     ensureCacheDirectory();
     const cacheData = {
-      timestamp: new Date().toISOString(),
+      timestamp: moment().utc().toISOString(),
       data: data
     };
     fs.writeFileSync(CACHE_FILE, JSON.stringify(cacheData, null, 2));
@@ -153,6 +154,7 @@ export async function fetchWorldCupMatches(season = 2026) {
 /**
  * 清除缓存文件
  * @function clearCache
+ * @deprecated 导出但未在任何活跃模块中导入。保留为手动测试工具。
  */
 export function clearCache() {
   try {

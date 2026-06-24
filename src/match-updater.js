@@ -1,21 +1,8 @@
 import 'dotenv/config';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import moment from 'moment-timezone';
 import { fetchWorldCupMatches } from './api.js';
 import { generateAndSaveICal } from './ical-generator.js';
 import { getStateTracker, updateStateTracker } from './state-tracker.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const STATE_FILE = path.join(__dirname, '..', '.state', 'tracker.json');
-
-async function ensureStateDirectory() {
-  const dir = path.dirname(STATE_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
 
 /**
  * 获取今天的所有比赛（北京时间判断）
@@ -36,7 +23,9 @@ function getTodayMatches(allMatches) {
  * 检查比赛是否已获取比分
  */
 function isMatchFinished(match) {
-  return match.status === 'FINISHED' && match.score?.fullTime?.home !== null;
+  return match.status === 'FINISHED' &&
+    match.score?.fullTime?.home != null &&
+    match.score?.fullTime?.away != null;
 }
 
 /**
@@ -44,9 +33,7 @@ function isMatchFinished(match) {
  */
 export async function checkAndUpdateMatches() {
   try {
-    console.log(`\n[${new Date().toISOString()}] 开始检查比赛数据...`);
-
-    await ensureStateDirectory();
+    console.log(`\n[${moment().utc().toISOString()}] 开始检查比赛数据...`);
 
     // 获取比赛数据
     const season = 2026;
@@ -62,6 +49,9 @@ export async function checkAndUpdateMatches() {
 
     const state = await getStateTracker();
 
+    // 收集需要处理的比赛中，最后统一更新 ICS 文件
+    const processedIds = [];
+
     // 处理已完成的比赛
     for (const match of todayMatches) {
       const matchId = match.id;
@@ -70,20 +60,23 @@ export async function checkAndUpdateMatches() {
       if (isMatchFinished(match)) {
         if (!isProcessed) {
           console.log(`处理已完成比赛: ${match.homeTeam.name} vs ${match.awayTeam.name}`);
-
-          // 更新 iCal 文件
-          generateAndSaveICal(apiData.matches, 2026, 'WorldCupSchedule.ics');
-          console.log('✓ ICS 文件已更新');
+          processedIds.push(match);
 
           // 更新状态
           await updateStateTracker(matchId, {
             status: 'FINISHED',
-            enrichedAt: new Date().toISOString()
+            enrichedAt: moment().utc().toISOString()
           });
 
           console.log(`✓ 比赛已处理: ${match.homeTeam.name} ${match.score.fullTime.home}-${match.score.fullTime.away} ${match.awayTeam.name}`);
         }
       }
+    }
+
+    // 有新增完成的比赛时，统一更新一次 ICS 文件
+    if (processedIds.length > 0) {
+      generateAndSaveICal(apiData.matches, 2026, 'WorldCupSchedule.ics');
+      console.log(`✓ ICS 文件已更新（${processedIds.length} 场比赛）`);
     }
 
     // 无需计算下次检查时间（固定 20 分钟检查）
@@ -98,6 +91,8 @@ export async function checkAndUpdateMatches() {
 
 /**
  * 检查是否有比赛应该已结束但还无比分
+ *
+ * @deprecated 自固定 20 分钟检查架构后不再使用。保留以防未来需要恢复智能调度。
  */
 function hasMatchWithoutScoreAfterDeadline(allMatches) {
   const now = moment().utc();
@@ -112,6 +107,10 @@ function hasMatchWithoutScoreAfterDeadline(allMatches) {
 
 /**
  * 以 5 分钟间隔重复检查，直到获取到比分
+ *
+ * @deprecated 自固定 20 分钟检查架构后不再使用（无任何模块导入此函数）。
+ *             checkAndUpdateMatches 已不再返回 nextCheckTime，此函数中的调度逻辑已失效。
+ *             保留以防未来需要恢复智能调度。
  */
 export async function checkWithRetry() {
   let retryCount = 0;
