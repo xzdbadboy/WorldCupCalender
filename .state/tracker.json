@@ -2,6 +2,66 @@
   "version": "1.0.0",
   "createdAt": "2026-06-22T07:01:54.418Z",
   "processedMatches": {
+    "537331": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-25T03:41:23.051Z",
+      "lastUpdatedAt": "2026-06-25T03:41:23.051Z"
+    },
+    "537332": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-25T03:41:23.052Z",
+      "lastUpdatedAt": "2026-06-25T03:41:23.052Z"
+    },
+    "537337": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-24T22:13:51.958Z",
+      "lastUpdatedAt": "2026-06-24T22:13:51.959Z"
+    },
+    "537338": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-24T22:13:51.959Z",
+      "lastUpdatedAt": "2026-06-24T22:13:51.959Z"
+    },
+    "537343": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-25T01:07:29.465Z",
+      "lastUpdatedAt": "2026-06-25T01:07:29.465Z"
+    },
+    "537344": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-25T01:07:29.465Z",
+      "lastUpdatedAt": "2026-06-25T01:07:29.465Z"
+    },
+    "537349": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-26T07:55:03.018Z",
+      "lastUpdatedAt": "2026-06-26T07:55:03.019Z"
+    },
+    "537350": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-26T07:55:03.019Z",
+      "lastUpdatedAt": "2026-06-26T07:55:03.019Z"
+    },
+    "537355": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-25T22:49:01.494Z",
+      "lastUpdatedAt": "2026-06-25T22:49:01.494Z"
+    },
+    "537356": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-25T22:49:01.494Z",
+      "lastUpdatedAt": "2026-06-25T22:49:01.494Z"
+    },
+    "537361": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-26T02:13:04.924Z",
+      "lastUpdatedAt": "2026-06-26T02:13:04.924Z"
+    },
+    "537362": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-26T02:13:04.925Z",
+      "lastUpdatedAt": "2026-06-26T02:13:04.925Z"
+    },
     "537365": {
       "status": "FINISHED",
       "enrichedAt": "2026-06-22T07:29:10.063Z",
@@ -11,6 +71,16 @@
       "status": "FINISHED",
       "enrichedAt": "2026-06-22T07:01:54.418Z",
       "lastUpdatedAt": "2026-06-22T07:01:54.418Z"
+    },
+    "537367": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-27T06:43:36.393Z",
+      "lastUpdatedAt": "2026-06-27T06:43:36.393Z"
+    },
+    "537368": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-27T06:43:36.394Z",
+      "lastUpdatedAt": "2026-06-27T06:43:36.394Z"
     },
     "537371": {
       "status": "FINISHED",
@@ -22,6 +92,16 @@
       "enrichedAt": "2026-06-22T07:29:19.051Z",
       "lastUpdatedAt": "2026-06-22T07:29:19.051Z"
     },
+    "537373": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-27T03:35:04.302Z",
+      "lastUpdatedAt": "2026-06-27T03:35:04.302Z"
+    },
+    "537374": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-27T03:35:04.303Z",
+      "lastUpdatedAt": "2026-06-27T03:35:04.303Z"
+    },
     "537393": {
       "status": "FINISHED",
       "enrichedAt": "2026-06-23T01:15:59.686Z",
@@ -31,6 +111,16 @@
       "status": "FINISHED",
       "enrichedAt": "2026-06-23T02:29:59.894Z",
       "lastUpdatedAt": "2026-06-23T02:29:59.894Z"
+    },
+    "537395": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-26T21:50:32.357Z",
+      "lastUpdatedAt": "2026-06-26T21:50:32.357Z"
+    },
+    "537396": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-26T21:50:32.357Z",
+      "lastUpdatedAt": "2026-06-26T21:50:32.357Z"
     },
     "537399": {
       "status": "FINISHED",
@@ -61,6 +151,16 @@
       "status": "FINISHED",
       "enrichedAt": "2026-06-24T01:36:02.663Z",
       "lastUpdatedAt": "2026-06-24T01:36:02.663Z"
+    },
+    "537413": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-27T23:11:35.933Z",
+      "lastUpdatedAt": "2026-06-27T23:11:35.933Z"
+    },
+    "537414": {
+      "status": "FINISHED",
+      "enrichedAt": "2026-06-27T23:11:35.933Z",
+      "lastUpdatedAt": "2026-06-27T23:11:35.933Z"
     }
   },
   "lastCheck": "2026-06-23T05:42:26.955Z",
