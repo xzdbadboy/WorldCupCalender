@@ -35,7 +35,11 @@ const TEAM_ALIASES = {
   'Korea Republic': 'South Korea',
   'USA': 'United States',
   'Bosnia and Herzegovina': 'Bosnia-Herzegovina',
-  'Côte d\'Ivoire': 'Ivory Coast'
+  'Côte d\'Ivoire': 'Ivory Coast',
+  '刚果民主共和国': 'Congo DR',
+  '刚果（金）': 'Congo DR',
+  '佛得角 ': 'Cape Verde', // 注意：懂球帝的数据有尾随空格
+  '佛得角': 'Cape Verde'
 };
 
 /**
@@ -77,6 +81,41 @@ export function getTeamMapping(teamName) {
     nameCn: teamName,
     flag: '❔'
   };
+}
+
+/**
+ * 将队伍名称（中文或英文）标准化为英文
+ * @function normalizeTeamName
+ * @param {string} teamName - 队伍名称（中文或英文）
+ * @returns {string} 标准化后的英文队名
+ * @example
+ * normalizeTeamName('巴西'); // 返回 'Brazil'
+ * normalizeTeamName('Brazil'); // 返回 'Brazil'
+ */
+export function normalizeTeamName(teamName) {
+  if (!teamName) {
+    return '';
+  }
+
+  const teamInfo = loadTeamInfo();
+
+  // 先检查别名
+  const normalizedName = TEAM_ALIASES[teamName] || teamName;
+
+  // 查找匹配的队伍
+  const team = teamInfo.find(t =>
+    t.nameEn === normalizedName ||
+    t.nameEn.toLowerCase() === normalizedName.toLowerCase() ||
+    t.nameCn === normalizedName ||
+    t.nameCn === teamName
+  );
+
+  if (team) {
+    return team.nameEn;
+  }
+
+  // 如果找不到，返回原名
+  return teamName;
 }
 
 /**
