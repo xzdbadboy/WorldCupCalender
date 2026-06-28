@@ -1,8 +1,81 @@
 import 'dotenv/config';
 import moment from 'moment-timezone';
 import { fetchWorldCupMatches } from './api.js';
+import { getAllMatches as getDongqiudiMatches } from './dongqiudi-api.js';
+import { getAllMatches as getCCTVMatches } from './cctv-api.js';
 import { generateAndSaveICal } from './ical-generator.js';
 import { getStateTracker, updateStateTracker } from './state-tracker.js';
+import { normalizeTeamName } from './team-mapper.js';
+
+/**
+ * 计算两个时间的相似度（小时差）
+ */
+function getTimeDifference(time1, time2) {
+  const date1 = new Date(time1);
+  const date2 = new Date(time2);
+  return Math.abs(date1 - date2) / (1000 * 60 * 60); // 返回小时差
+}
+
+/**
+ * 补充 FIFA 数据中缺失的淘汰赛对阵信息
+ */
+function enrichFIFAMatches(fifaMatches, dongqiudiMatches, cctvMatches) {
+  // 合并所有补充数据源（CCTV 优先）
+  const allSupplementMatches = [...cctvMatches, ...dongqiudiMatches];
+
+  let enrichedCount = 0;
+  const knockoutStages = ['LAST_32', 'LAST_16', 'QUARTER_FINALS', 'SEMI_FINALS', 'THIRD_PLACE', 'FINAL'];
+
+  const enrichedMatches = fifaMatches.map(fifaMatch => {
+    if (!knockoutStages.includes(fifaMatch.stage)) {
+      return fifaMatch;
+    }
+
+    if (fifaMatch.homeTeam?.name && fifaMatch.awayTeam?.name) {
+      return fifaMatch;
+    }
+
+    let bestMatch = null;
+    let minTimeDiff = Infinity;
+
+    for (const supplement of allSupplementMatches) {
+      if (!supplement.homeTeam?.name || !supplement.awayTeam?.name) {
+        continue;
+      }
+
+      const timeDiff = getTimeDifference(fifaMatch.utcDate, supplement.utcDate);
+
+      if (timeDiff > 4) {
+        continue;
+      }
+
+      if (timeDiff < minTimeDiff) {
+        minTimeDiff = timeDiff;
+        bestMatch = supplement;
+      }
+    }
+
+    if (bestMatch) {
+      enrichedCount++;
+      return {
+        ...fifaMatch,
+        homeTeam: bestMatch.homeTeam,
+        awayTeam: bestMatch.awayTeam,
+        score: bestMatch.score || fifaMatch.score,
+        status: bestMatch.status || fifaMatch.status,
+        enrichedFrom: bestMatch.source
+      };
+    }
+
+    return fifaMatch;
+  });
+
+  if (enrichedCount > 0) {
+    console.log(`   - 补充了 ${enrichedCount} 场淘汰赛的对阵信息`);
+  }
+
+  return enrichedMatches;
+}
 
 /**
  * 获取今天的所有比赛（北京时间判断）
@@ -35,10 +108,30 @@ export async function checkAndUpdateMatches() {
   try {
     console.log(`\n[${moment().utc().toISOString()}] 开始检查比赛数据...`);
 
-    // 获取比赛数据
+    // 1. 获取 FIFA 官方数据
     const season = 2026;
     const apiData = await fetchWorldCupMatches(season);
-    const todayMatches = getTodayMatches(apiData.matches);
+
+    // 2. 获取补充数据源
+    let dongqiudiMatches = [];
+    let cctvMatches = [];
+
+    try {
+      dongqiudiMatches = await getDongqiudiMatches();
+    } catch (error) {
+      console.warn('⚠️  懂球帝 API 调用失败');
+    }
+
+    try {
+      cctvMatches = await getCCTVMatches();
+    } catch (error) {
+      console.warn('⚠️  CCTV 体育 API 调用失败');
+    }
+
+    // 3. 补充淘汰赛对阵信息
+    const enrichedMatches = enrichFIFAMatches(apiData.matches, dongqiudiMatches, cctvMatches);
+
+    const todayMatches = getTodayMatches(enrichedMatches);
 
     console.log(`今天找到 ${todayMatches.length} 场比赛`);
 
@@ -73,10 +166,14 @@ export async function checkAndUpdateMatches() {
       }
     }
 
-    // 有新增完成的比赛时，统一更新一次 ICS 文件
+    // 有新增完成的比赛时，统一更新一次 ICS 文件（使用补充后的数据）
     if (processedIds.length > 0) {
-      generateAndSaveICal(apiData.matches, 2026, 'WorldCupSchedule.ics');
+      generateAndSaveICal(enrichedMatches, 2026, 'WorldCupSchedule.ics');
       console.log(`✓ ICS 文件已更新（${processedIds.length} 场比赛）`);
+    } else {
+      // 即使没有新完成的比赛，也更新一次日历（确保淘汰赛对阵信息是最新的）
+      generateAndSaveICal(enrichedMatches, 2026, 'WorldCupSchedule.ics');
+      console.log(`✓ ICS 文件已更新（保持淘汰赛对阵最新）`);
     }
 
     // 无需计算下次检查时间（固定 20 分钟检查）
