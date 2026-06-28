@@ -31,8 +31,11 @@ function loadTeamInfo() {
  */
 const TEAM_ALIASES = {
   'Cape Verde Islands': 'Cape Verde',
+  'Cabo Verde': 'Cape Verde',
   'Korea Republic': 'South Korea',
-  'USA': 'United States'
+  'USA': 'United States',
+  'Bosnia and Herzegovina': 'Bosnia-Herzegovina',
+  'Côte d\'Ivoire': 'Ivory Coast'
 };
 
 /**
