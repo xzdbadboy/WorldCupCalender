@@ -19,57 +19,27 @@ function generateMatchKey(match) {
 }
 
 /**
+ * 计算两个时间的相似度（小时差）
+ */
+function getTimeDifference(time1, time2) {
+  const date1 = new Date(time1);
+  const date2 = new Date(time2);
+  return Math.abs(date1 - date2) / (1000 * 60 * 60); // 返回小时差
+}
+
+/**
  * 补充 FIFA 数据中缺失的淘汰赛对阵信息
  * 策略：以 FIFA 的 104 场比赛时间为准，用懂球帝/CCTV 补充球队名和比分
+ * 注意：不依赖阶段匹配，只用时间匹配（因为不同数据源的阶段名称不一致）
  */
 function enrichFIFAMatches(fifaMatches, dongqiudiMatches, cctvMatches) {
   console.log('\n正在补充淘汰赛对阵信息...');
 
-  // 创建补充数据源的索引
-  const supplementMap = new Map();
-
-  // 添加懂球帝数据
-  dongqiudiMatches.forEach(match => {
-    if (match.homeTeam?.name && match.awayTeam?.name) {
-      const key = generateMatchKey(match);
-      supplementMap.set(key, { ...match, source: 'dongqiudi' });
-
-      // 同时添加前后一天的键（处理时区差异）
-      const date = new Date(match.utcDate.split('T')[0]);
-      [-1, 1].forEach(offset => {
-        const d = new Date(date);
-        d.setDate(d.getDate() + offset);
-        const altKey = `${d.toISOString().split('T')[0]}_${normalizeTeamName(match.homeTeam.name).toLowerCase().replace(/\s+/g, '')}_vs_${normalizeTeamName(match.awayTeam.name).toLowerCase().replace(/\s+/g, '')}`;
-        if (!supplementMap.has(altKey)) {
-          supplementMap.set(altKey, { ...match, source: 'dongqiudi' });
-        }
-      });
-    }
-  });
-
-  // 添加 CCTV 数据（优先级低于懂球帝）
-  cctvMatches.forEach(match => {
-    if (match.homeTeam?.name && match.awayTeam?.name) {
-      const key = generateMatchKey(match);
-      if (!supplementMap.has(key)) {
-        supplementMap.set(key, { ...match, source: 'cctv' });
-
-        // 同样添加前后一天的键
-        const date = new Date(match.utcDate.split('T')[0]);
-        [-1, 1].forEach(offset => {
-          const d = new Date(date);
-          d.setDate(d.getDate() + offset);
-          const altKey = `${d.toISOString().split('T')[0]}_${normalizeTeamName(match.homeTeam.name).toLowerCase().replace(/\s+/g, '')}_vs_${normalizeTeamName(match.awayTeam.name).toLowerCase().replace(/\s+/g, '')}`;
-          if (!supplementMap.has(altKey)) {
-            supplementMap.set(altKey, { ...match, source: 'cctv' });
-          }
-        });
-      }
-    }
-  });
+  // 合并所有补充数据源（CCTV 优先，因为它有更多确定的对阵）
+  const allSupplementMatches = [...cctvMatches, ...dongqiudiMatches];
 
   let enrichedCount = 0;
-  const knockoutStages = ['LAST_16', 'QUARTER_FINALS', 'SEMI_FINALS', 'THIRD_PLACE', 'FINAL'];
+  const knockoutStages = ['LAST_32', 'LAST_16', 'QUARTER_FINALS', 'SEMI_FINALS', 'THIRD_PLACE', 'FINAL'];
 
   // 遍历 FIFA 的比赛，补充淘汰赛的对阵信息
   const enrichedMatches = fifaMatches.map(fifaMatch => {
@@ -83,23 +53,42 @@ function enrichFIFAMatches(fifaMatches, dongqiudiMatches, cctvMatches) {
       return fifaMatch;
     }
 
-    // 尝试从补充数据源中找到匹配的比赛
-    const dateStr = fifaMatch.utcDate ? fifaMatch.utcDate.split('T')[0] : '';
+    // 尝试从补充数据源中找到时间最接近的比赛
+    let bestMatch = null;
+    let minTimeDiff = Infinity;
 
-    // 尝试匹配相同日期和阶段的比赛
-    for (const [key, supplement] of supplementMap.entries()) {
-      if (key.startsWith(dateStr) && supplement.stage === fifaMatch.stage) {
-        // 找到匹配，补充球队信息和比分
-        enrichedCount++;
-        return {
-          ...fifaMatch,
-          homeTeam: supplement.homeTeam,
-          awayTeam: supplement.awayTeam,
-          score: supplement.score || fifaMatch.score,
-          status: supplement.status || fifaMatch.status,
-          enrichedFrom: supplement.source
-        };
+    for (const supplement of allSupplementMatches) {
+      // 必须有完整的球队信息
+      if (!supplement.homeTeam?.name || !supplement.awayTeam?.name) {
+        continue;
       }
+
+      // 计算时间差（小时）
+      const timeDiff = getTimeDifference(fifaMatch.utcDate, supplement.utcDate);
+
+      // 时间差必须在 4 小时内（严格匹配，避免误匹配）
+      if (timeDiff > 4) {
+        continue;
+      }
+
+      // 找到时间最接近的匹配
+      if (timeDiff < minTimeDiff) {
+        minTimeDiff = timeDiff;
+        bestMatch = supplement;
+      }
+    }
+
+    // 如果找到匹配，补充球队信息
+    if (bestMatch) {
+      enrichedCount++;
+      return {
+        ...fifaMatch,
+        homeTeam: bestMatch.homeTeam,
+        awayTeam: bestMatch.awayTeam,
+        score: bestMatch.score || fifaMatch.score,
+        status: bestMatch.status || fifaMatch.status,
+        enrichedFrom: bestMatch.source
+      };
     }
 
     // 没有找到补充数据，返回原始 FIFA 数据
